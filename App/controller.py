@@ -20,36 +20,57 @@
  * along withthis program.  If not, see <http://www.gnu.org/licenses/>.
  """
 
+import csv
+import time
+import tracemalloc
+
 import config as cf
 import model
-import time
-import csv
-import tracemalloc
 
 """
 El controlador se encarga de mediar entre la vista y el modelo.
 """
 
-
 def new_controller():
     """
     Crea una instancia del modelo
     """
-    #TODO: Llamar la función del modelo que crea las estructuras de datos
-    pass
+    control = {
+        'model': None
+    }
+    control['model'] = model.new_data_structs()
+    return control
 
 
 # Funciones para la carga de datos
 
-def load_data(control, filename):
-    """
-    Carga los datos del reto
-    """
-    # TODO: Realizar la carga de datos
-    pass
 
+def loadData(control):
+    """
+    Carga los datos de los archivos y carga los datos en la
+    estructura de datos.
+    """
+    return loadRegs(control)
+
+
+def loadRegs(control):
+    """
+    Carga los registros del archivo. Por cada registro se indica al
+    modelo que debe adicionarlo a data_structs.
+    """
+    tamanio_archivo = input("Que tamaño de archivo quiere cargar? (5pct, 10pct, 20pct, 30pct, 50pct, 80pct, large, small)\n")
+    regsfile = cf.data_dir + "Salida_agregados_renta_juridicos_AG-" + tamanio_archivo + ".csv"
+    input_file = csv.DictReader(open(regsfile, encoding='utf-8'))
+    for registro in input_file:
+        model.addReg(control['model'], registro)
+
+    total_filas = model.data_size(control["model"])
+    print("Total de filas cargadas: " + str(total_filas))
+
+    return model.sort_by_anio_act_eco(control['model'])
 
 # Funciones de ordenamiento
+
 
 def sort(control):
     """
@@ -77,12 +98,11 @@ def req_1(control):
     pass
 
 
-def req_2(control):
+def req_2(control, anio, codigo):
     """
     Retorna el resultado del requerimiento 2
     """
-    # TODO: Modificar el requerimiento 2
-    pass
+    return model.max_saldo_a_favor(control["model"], anio, codigo)
 
 
 def req_3(control):

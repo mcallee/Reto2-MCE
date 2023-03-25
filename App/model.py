@@ -26,16 +26,18 @@
 
 
 import config as cf
+
 from DISClib.ADT import list as lt
-from DISClib.ADT import stack as st
-from DISClib.ADT import queue as qu
 from DISClib.ADT import map as mp
-from DISClib.DataStructures import mapentry as me
-from DISClib.Algorithms.Sorting import shellsort as sa
+from DISClib.ADT import queue as qu
+from DISClib.ADT import stack as st
 from DISClib.Algorithms.Sorting import insertionsort as ins
-from DISClib.Algorithms.Sorting import selectionsort as se
 from DISClib.Algorithms.Sorting import mergesort as merg
 from DISClib.Algorithms.Sorting import quicksort as quk
+from DISClib.Algorithms.Sorting import selectionsort as se
+from DISClib.Algorithms.Sorting import shellsort as sa
+from DISClib.DataStructures import mapentry as me
+
 assert cf
 
 """
@@ -50,48 +52,180 @@ def new_data_structs():
     """
     Inicializa las estructuras de datos del modelo. Las crea de
     manera vacía para posteriormente almacenar la información.
-    """
-    #TODO: Inicializar las estructuras de datos
-    pass
 
+    Crea una lista vacia para guardar todos los registros.
 
-# Funciones para agregar informacion al modelo
+    Se crean indices (Maps) por los siguientes criterios:
+               Año 
+               Nombre sector económico
+               Código subsector económico
 
-def add_data(data_structs, data):
+    Retorna la estructura de datos inicializada.
     """
-    Función para agregar nuevos elementos a la lista
+
+    data_structs = {
+               "Regs": None,
+               "Código sector económico": None,
+               "Código subsector económico": None
+                   }
+    
     """
-    #TODO: Crear la función para agregar elementos a una lista
-    pass
+    Esta lista contiene todo los registros encontrados
+    en los archivos de carga.  Estos registros estan
+    ordenados por año. Son referenciados
+    por los indices creados a continuacion.
+    """
+
+    data_structs["Regs"] = lt.newList('SINGLE_LINKED',cmpRegsAnio)
+    
+    """
+    A continuacion se crean indices por diferentes criterios
+    para llegar a la informacion consultada."""
+    """
+    Este indice crea un map cuya llave es un año y el valor es un diccionario
+    con una llave para el año y la otra llave con los registros asociados
+    a ese año.
+    """
+    data_structs["Año"] = mp.newMap(20,
+                                   maptype='CHAINING',
+                                   loadfactor=4,
+                                   cmpfunction=cmpRegsAnio)
+    
+    """
+    Este indice crea un map cuya llave es el código de un sector económico y el valor 
+    es un diccionario con una llave para el código y la otra llave con los registros 
+    asociados a ese sector.
+    """
+    data_structs["Código sector económico"] = mp.newMap(1000,
+                                   maptype='CHAINING',
+                                   loadfactor=4,
+                                   cmpfunction=cmpRegsAnio)
+    
+    """
+    Este indice crea un map cuya llave es el código de un subsector económico y el valor 
+    es un diccionario con una llave para el código y la otra llave con los registros 
+    asociados a ese subsector.
+    """
+    data_structs["Código subsector económico"] = mp.newMap(2000,
+                                   maptype='CHAINING',
+                                   loadfactor=4,
+                                   cmpfunction=cmpRegsAnio)
+    
+    return data_structs
 
 
 # Funciones para creacion de datos
 
-def new_data(id, info):
+
+def newAnio(aniopub):
     """
-    Crea una nueva estructura para modelar los datos
+    Crea la estructura de libros asociados a un año.
     """
-    #TODO: Crear la función para estructurar los datos
-    pass
+    entry = {"Año": "", "Regs": None}
+    entry["Año"] = aniopub
+    entry["Regs"] = lt.newList('SINGLE_LINKED', cmpRegsAnio)
+    return entry
+
+
+def newSector(codsector):
+    """
+    Crea la estructura de libros asociados a un sector económico.
+    """
+    entry = {"Sector": "", "Regs": None}
+    entry["Sector"] = codsector
+    entry["Regs"] = lt.newList('SINGLE_LINKED', sort_by_actividad_economica)
+    return entry
+
+
+def newSubsector(codsubsector):
+    """
+    Crea la estructura de libros asociados a un subsector económico.
+    """
+    entry = {"Subsector": "", "Regs": None}
+    entry["Subsector"] = codsubsector
+    entry["Regs"] = lt.newList('SINGLE_LINKED', sort_by_actividad_economica)
+    return entry
+
+
+# Funciones para agregar informacion al modelo
+
+
+def addReg(data_structs, reg):
+    """
+    Función para agregar un registro a la lista.
+    """
+    lt.addLast(data_structs["Regs"], reg)
+    addRegAnio(data_structs, reg)
+    addRegSector(data_structs, reg)
+    addRegSubsector(data_structs, reg)
+
+
+def addRegAnio(data_structs, reg):
+    anio = reg["Año"]
+    if not mp.contains(data_structs["Año"], anio):
+        nuevo_anio = newAnio(anio)
+        mp.put(data_structs["Año"], anio, nuevo_anio)
+        lt.addLast(nuevo_anio["Regs"], reg)
+    else:
+        entry = mp.get(data_structs["Año"], anio)
+        anio_existente = me.getValue(entry)
+        lt.addLast(anio_existente["Regs"], reg)
+
+
+def addRegSector(data_structs, reg):
+    anio = reg["Código sector económico"]
+    if not mp.contains(data_structs["Código sector económico"], anio):
+        nuevo_anio = newAnio(anio)
+        mp.put(data_structs["Código sector económico"], anio, nuevo_anio)
+        lt.addLast(nuevo_anio["Regs"], reg)
+    else:
+        entry = mp.get(data_structs["Código sector económico"], anio)
+        sector_existente = me.getValue(entry)
+        lt.addLast(sector_existente["Regs"], reg)
+
+
+def addRegSubsector(data_structs, reg):
+    anio = reg["Código subsector económico"]
+    if not mp.contains(data_structs["Código subsector económico"], anio):
+        nuevo_anio = newAnio(anio)
+        mp.put(data_structs["Código subsector económico"], anio, nuevo_anio)
+        lt.addLast(nuevo_anio["Regs"], reg)
+    else:
+        entry = mp.get(data_structs["Código subsector económico"], anio)
+        subsector_existente = me.getValue(entry)
+        lt.addLast(subsector_existente["Regs"], reg)
+
 
 
 # Funciones de consulta
+
 
 def get_data(data_structs, id):
     """
     Retorna un dato a partir de su ID
     """
-    #TODO: Crear la función para obtener un dato de una lista
-    pass
+    return lt.getElement(data_structs["Regs"], id)
 
 
 def data_size(data_structs):
     """
     Retorna el tamaño de la lista de datos
     """
-    #TODO: Crear la función para obtener el tamaño de una lista
-    pass
+    return lt.size(data_structs["Regs"])
 
+def getRegsByYears(data_structs, year):
+    exists = mp.contains(data_structs["Año"], year)
+    if exists:
+        entry = mp.get(data_structs["Año"], year)
+        return me.getValue(entry)
+    return None
+
+def getRegsByEconomicSector(data_structs, sector_code):
+    exists = mp.contains(data_structs["Código sector económico"], sector_code)
+    if exists:
+        entry = mp.get(data_structs["Código sector económico"], sector_code)
+        return me.getValue(entry)
+    return None
 
 def req_1(data_structs):
     """
@@ -101,12 +235,28 @@ def req_1(data_structs):
     pass
 
 
-def req_2(data_structs):
+def sort_crit_saldo_a_favor (dato1,dato2):
+    """
+    Ordena los datos de menor a mayor acorde a Total saldo a favor.   
+    """
+    if dato1["Total saldo a favor"] < dato2["Total saldo a favor"]:
+        return True
+    else:
+        return False
+
+
+def max_saldo_a_favor(data_structs, anio, cod_sec_econ):
     """
     Función que soluciona el requerimiento 2
     """
-    # TODO: Realizar el requerimiento 2
-    pass
+    data_structs_2 = new_data_structs()
+    data_anio = getRegsByYears(data_structs, anio)
+    for reg in lt.iterator(data_anio["Regs"]):
+        addReg(data_structs_2, reg)
+
+    data_sec = getRegsByEconomicSector(data_structs_2, cod_sec_econ)
+    sorted_data = sa.sort(data_sec["Regs"], sort_crit_saldo_a_favor)
+    return lt.lastElement(sorted_data)
 
 
 def req_3(data_structs):
@@ -159,33 +309,46 @@ def req_8(data_structs):
 
 # Funciones utilizadas para comparar elementos dentro de una lista
 
-def compare(data_1, data_2):
+
+def cmpRegsAnio(anio_1, me_anio_2):
     """
-    Función encargada de comparar dos datos
+    Compara los registros por año, ordenándolos de menor a mayor. 
     """
-    #TODO: Crear función comparadora de la lista
-    pass
+    anio_2 = me.getKey(me_anio_2)
+    if (anio_1 == anio_2):
+        return 0
+    elif (anio_1 > anio_2):
+        return 1
+    else:
+        return -1
+    
+def sort_by_actividad_economica(act_1, me_act_2):
+    """
+    Compara los registros por año, ordenándolos de menor a mayor. 
+    """
+    anio_2 = me.getKey(me_act_2)
+    if (act_1 == anio_2):
+        return 0
+    elif (act_1 > anio_2):
+        return 1
+    else:
+        return -1
+
 
 # Funciones de ordenamiento
 
 
-def sort_criteria(data_1, data_2):
-    """sortCriteria criterio de ordenamiento para las funciones de ordenamiento
-
-    Args:
-        data1 (_type_): _description_
-        data2 (_type_): _description_
-
-    Returns:
-        _type_: _description_
-    """
-    #TODO: Crear función comparadora para ordenar
-    pass
+def compareYearAndActivity(reg_1,reg_2):
+    if reg_1["Año"] < reg_2["Año"]:
+        return True
+    elif reg_1["Año"] == reg_2["Año"]:
+        return reg_1["Código actividad económica"] < reg_2["Código actividad económica"]
+    else:
+        return False
 
 
-def sort(data_structs):
+def sort_by_anio_act_eco(data_structs):
     """
     Función encargada de ordenar la lista con los datos
     """
-    #TODO: Crear función de ordenamiento
-    pass
+    return sa.sort(data_structs["Regs"], compareYearAndActivity)

@@ -20,17 +20,21 @@
  * along withthis program.  If not, see <http://www.gnu.org/licenses/>.
  """
 
-import config as cf
 import sys
+
+import config as cf
 import controller
+
 from DISClib.ADT import list as lt
-from DISClib.ADT import stack as st
-from DISClib.ADT import queue as qu
 from DISClib.ADT import map as mp
+from DISClib.ADT import queue as qu
+from DISClib.ADT import stack as st
 from DISClib.DataStructures import mapentry as me
+
 assert cf
-from tabulate import tabulate
 import traceback
+
+from tabulate import tabulate
 
 """
 La vista se encarga de la interacción con el usuario
@@ -44,8 +48,8 @@ def new_controller():
     """
         Se crea una instancia del controlador
     """
-    #TODO: Llamar la función del controlador donde se crean las estructuras de datos
-    pass
+    control = controller.new_controller()
+    return control
 
 
 def print_menu():
@@ -66,16 +70,41 @@ def load_data(control):
     """
     Carga los datos
     """
-    #TODO: Realizar la carga de datos
-    pass
+    lista_datos = controller.loadData(control)
+    registros_mostrar = []
+    registros_anio = []
+    headers = [ "Año",
+               "Código actividad económica",
+                "Nombre actividad económica",
+                "Código sector económico",
+                "Nombre sector económico",
+                "Código subsector económico",
+                "Nombre subsector económico",
+                "Total ingresos netos",
+                "Total costos y gastos",
+                "Total saldo a pagar",
+                "Total saldo a favor" ]
+    
+    anio = lt.firstElement(lista_datos)["Año"]
+    for reg in lt.iterator(lista_datos):
+        if reg["Año"] != anio:
+            anio = reg["Año"]
+            if len(registros_anio) < 6:
+                registros_mostrar.extend(registros_anio)
+            else:
+                registros_mostrar.extend(registros_anio[:3])
+                registros_mostrar.extend(registros_anio[-3:])
+            registros_anio = []
 
+        columnas_mostrar = []
+        for columna in headers:
+            columnas_mostrar.append(reg[columna])
+        registros_anio.append(columnas_mostrar)
+    
+    width=9
+    tabla = tabulate(registros_mostrar,headers,tablefmt="grid", maxcolwidths=width, maxheadercolwidths=width)
+    print(tabla)
 
-def print_data(control, id):
-    """
-        Función que imprime un dato dado su ID
-    """
-    #TODO: Realizar la función para imprimir un elemento
-    pass
 
 def print_req_1(control):
     """
@@ -85,12 +114,29 @@ def print_req_1(control):
     pass
 
 
-def print_req_2(control):
+def print_req_2(control, anio, codigo):
     """
         Función que imprime la solución del Requerimiento 2 en consola
     """
-    # TODO: Imprimir el resultado del requerimiento 2
-    pass
+    registro = controller.req_2(control, anio, codigo)
+    headers = [
+               "Código actividad económica",
+                "Nombre actividad económica",
+                "Código subsector económico",
+                "Nombre subsector económico",
+                "Total ingresos netos",
+                "Total costos y gastos",
+                "Total saldo a pagar",
+                "Total saldo a favor" ]
+    
+    columnas_mostrar = []
+    for columna in headers:
+        columnas_mostrar.append(registro[columna])
+    
+    width=9
+    tabla = tabulate([columnas_mostrar],headers,tablefmt="grid", maxcolwidths=width, maxheadercolwidths=width)
+    print(tabla)
+
 
 
 def print_req_3(control):
@@ -157,12 +203,14 @@ if __name__ == "__main__":
         try:
             if int(inputs) == 1:
                 print("Cargando información de los archivos ....\n")
-                data = load_data(control)
+                load_data(control)
             elif int(inputs) == 2:
                 print_req_1(control)
 
             elif int(inputs) == 3:
-                print_req_2(control)
+                anio = input("Año para el cual desea consultar ")
+                codigo = input("Código sector para la cual desea consultar ")
+                print_req_2(control,anio, codigo)
 
             elif int(inputs) == 4:
                 print_req_3(control)
