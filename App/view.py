@@ -74,7 +74,7 @@ def load_data(control):
     registros_mostrar = []
     registros_anio = []
     headers = [ "Año",
-               "Código actividad económica",
+                "Código actividad económica",
                 "Nombre actividad económica",
                 "Código sector económico",
                 "Nombre sector económico",
@@ -114,13 +114,12 @@ def print_req_1(control):
     pass
 
 
-def print_req_2(control, anio, codigo):
+def print_max_saldo_a_favor(control, anio, codigo):
     """
         Función que imprime la solución del Requerimiento 2 en consola
     """
-    registro = controller.req_2(control, anio, codigo)
-    headers = [
-               "Código actividad económica",
+    registro = controller.return_max_saldo_a_favor(control, anio, codigo)
+    headers = [ "Código actividad económica",
                 "Nombre actividad económica",
                 "Código subsector económico",
                 "Nombre subsector económico",
@@ -138,13 +137,80 @@ def print_req_2(control, anio, codigo):
     print(tabla)
 
 
-
-def print_req_3(control):
+def print_min_total_retenciones(control, anio):
     """
         Función que imprime la solución del Requerimiento 3 en consola
     """
-    # TODO: Imprimir el resultado del requerimiento 3
-    pass
+    registro = controller.return_min_total_retenciones(control, anio)
+    headers = [ "Código sector económico",
+                "Nombre sector económico",
+                "Código subsector económico",
+                "Nombre subsector económico",
+                "Total retenciones del subsector económico",
+                "Total ingresos netos del subsector económico",
+                "Total costos y gastos del subsector económico",
+                "Total saldo a pagar del subsector económico",
+                "Total saldo a favor del subsector económico" ]
+    total_retenciones = 0
+    total_ingresos = 0
+    total_costos = 0
+    total_saldo_pagar = 0
+    total_saldo_favor = 0
+    primer_registro = lt.firstElement(registro)
+    cod_sector = primer_registro["Código sector económico"]
+    nom_sector = primer_registro["Nombre sector económico"]
+    cod_subsector = primer_registro["Código subsector económico"]
+    nom_subsector = primer_registro["Nombre subsector económico"]
+
+
+    for reg in lt.iterator(registro):
+        total_retenciones += int(reg["Total retenciones"])
+        total_ingresos += int(reg["Total ingresos netos"])
+        total_costos += int(reg["Total costos y gastos"])
+        total_saldo_pagar += int(reg["Total saldo a pagar"])
+        total_saldo_favor += int(reg["Total saldo a favor"])
+
+    column_info = [
+        cod_sector,
+        nom_sector,
+        cod_subsector,
+        nom_subsector,
+        total_retenciones,
+        total_ingresos,
+        total_costos,
+        total_saldo_pagar,
+        total_saldo_favor
+    ]
+
+    
+    width=9
+    tabla = tabulate([column_info],headers,tablefmt="grid", maxcolwidths=width, maxheadercolwidths=width)
+    print(tabla)
+
+    headers2 = [ "Código actividad económica",
+                 "Nombre actividad económica",
+                 "Total retenciones",
+                 "Total ingresos netos",
+                 "Total costos y gastos",
+                 "Total saldo a pagar",
+                 "Total saldo a favor" ]
+
+    datos_mostrar = []
+    for reg in lt.iterator(registro):
+        fila_mostrar = []
+        for columna in headers2:
+            fila_mostrar.append(reg[columna])
+        datos_mostrar.append(fila_mostrar)
+    
+    if len(datos_mostrar) > 6:
+        print("3 actividades económicas que menos y más contribuyeron para el año " + anio)
+        datos_mostrar = datos_mostrar[:3] + datos_mostrar[-3:]
+        width=10
+        print(tabulate(datos_mostrar,headers,tablefmt="grid",maxcolwidths=width,maxheadercolwidths=width))
+    else:
+        print("Hay únicamente " + str(len(datos_mostrar)) + " actividades económicas para el año " + anio )
+        width=10
+        print(tabulate(datos_mostrar,headers,tablefmt="grid",maxcolwidths=width,maxheadercolwidths=width))
 
 
 def print_req_4(control):
@@ -171,12 +237,30 @@ def print_req_6(control):
     pass
 
 
-def print_req_7(control):
+def print_mins_costos_gastos(control, num_act_econ, anio, cod_subsec_econ):
     """
         Función que imprime la solución del Requerimiento 7 en consola
     """
-    # TODO: Imprimir el resultado del requerimiento 7
-    pass
+    registro = controller.return_mins_costos_gastos(control, num_act_econ, anio, cod_subsec_econ)
+    headers = [ "Código actividad económica",
+                "Nombre actividad económica",
+                "Código subsector económico",
+                "Nombre subsector económico",
+                "Total ingresos netos",
+                "Total costos y gastos",
+                "Total saldo a pagar",
+                "Total saldo a favor" ]
+    
+    datos_mostrar = []
+    for reg in lt.iterator(registro):
+        fila_mostrar = []
+        for columna in headers:
+            fila_mostrar.append(reg[columna])
+        datos_mostrar.append(fila_mostrar)
+
+    width=9
+    tabla = tabulate(datos_mostrar,headers,tablefmt="grid", maxcolwidths=width, maxheadercolwidths=width)
+    print(tabla)
 
 
 def print_req_8(control):
@@ -210,10 +294,11 @@ if __name__ == "__main__":
             elif int(inputs) == 3:
                 anio = input("Año para el cual desea consultar ")
                 codigo = input("Código sector para la cual desea consultar ")
-                print_req_2(control,anio, codigo)
+                print_max_saldo_a_favor(control,anio, codigo)
 
             elif int(inputs) == 4:
-                print_req_3(control)
+                anio = input("Año para el cual desea consultar ")
+                print_min_total_retenciones(control, anio)
 
             elif int(inputs) == 5:
                 print_req_4(control)
@@ -225,7 +310,10 @@ if __name__ == "__main__":
                 print_req_6(control)
 
             elif int(inputs) == 8:
-                print_req_7(control)
+                anio = input("Año para el cual desea consultar ")
+                num_act_econ = int(input("Número de actividades económicas a identificar (ej.: TOP 3, 5, 10 o 20) "))
+                cod_subsec_econ = input("Código subsector económico a consultar ")
+                print_mins_costos_gastos(control, num_act_econ, anio, cod_subsec_econ)
 
             elif int(inputs) == 9:
                 print_req_8(control)

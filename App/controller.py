@@ -69,18 +69,9 @@ def loadRegs(control):
 
     return model.sort_by_anio_act_eco(control['model'])
 
-# Funciones de ordenamiento
-
-
-def sort(control):
-    """
-    Ordena los datos del modelo
-    """
-    #TODO: Llamar la función del modelo para ordenar los datos
-    pass
-
 
 # Funciones de consulta sobre el catálogo
+
 
 def get_data(control, id):
     """
@@ -98,19 +89,18 @@ def req_1(control):
     pass
 
 
-def req_2(control, anio, codigo):
+def return_max_saldo_a_favor(control, anio, codigo):
     """
     Retorna el resultado del requerimiento 2
     """
     return model.max_saldo_a_favor(control["model"], anio, codigo)
 
 
-def req_3(control):
+def return_min_total_retenciones(control, anio):
     """
     Retorna el resultado del requerimiento 3
     """
-    # TODO: Modificar el requerimiento 3
-    pass
+    return model.min_total_retenciones(control["model"], anio)
 
 
 def req_4(control):
@@ -128,6 +118,7 @@ def req_5(control):
     # TODO: Modificar el requerimiento 5
     pass
 
+
 def req_6(control):
     """
     Retorna el resultado del requerimiento 6
@@ -136,12 +127,11 @@ def req_6(control):
     pass
 
 
-def req_7(control):
+def return_mins_costos_gastos(control, num_act_econ, anio, cod_subsec_econ):
     """
     Retorna el resultado del requerimiento 7
     """
-    # TODO: Modificar el requerimiento 7
-    pass
+    return model.mins_costos_gastos(control["model"], num_act_econ, anio, cod_subsec_econ)
 
 
 def req_8(control):
@@ -153,6 +143,7 @@ def req_8(control):
 
 
 # Funciones para medir tiempos de ejecucion
+
 
 def get_time():
     """
@@ -167,6 +158,7 @@ def delta_time(start, end):
     """
     elapsed = float(end - start)
     return elapsed
+
 
 def get_memory():
     """

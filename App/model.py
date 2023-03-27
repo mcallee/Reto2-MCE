@@ -65,6 +65,7 @@ def new_data_structs():
 
     data_structs = {
                "Regs": None,
+               "Año": None,
                "Código sector económico": None,
                "Código subsector económico": None
                    }
@@ -173,28 +174,27 @@ def addRegAnio(data_structs, reg):
 
 
 def addRegSector(data_structs, reg):
-    anio = reg["Código sector económico"]
-    if not mp.contains(data_structs["Código sector económico"], anio):
-        nuevo_anio = newAnio(anio)
-        mp.put(data_structs["Código sector económico"], anio, nuevo_anio)
-        lt.addLast(nuevo_anio["Regs"], reg)
+    codigo = reg["Código sector económico"]
+    if not mp.contains(data_structs["Código sector económico"], codigo):
+        nuevo_codigo = newSector(codigo)
+        mp.put(data_structs["Código sector económico"], codigo, nuevo_codigo)
+        lt.addLast(nuevo_codigo["Regs"], reg)
     else:
-        entry = mp.get(data_structs["Código sector económico"], anio)
+        entry = mp.get(data_structs["Código sector económico"], codigo)
         sector_existente = me.getValue(entry)
         lt.addLast(sector_existente["Regs"], reg)
 
 
 def addRegSubsector(data_structs, reg):
-    anio = reg["Código subsector económico"]
-    if not mp.contains(data_structs["Código subsector económico"], anio):
-        nuevo_anio = newAnio(anio)
-        mp.put(data_structs["Código subsector económico"], anio, nuevo_anio)
-        lt.addLast(nuevo_anio["Regs"], reg)
+    subsector = reg["Código subsector económico"]
+    if not mp.contains(data_structs["Código subsector económico"], subsector):
+        nuevo_subsector = newSubsector(subsector)
+        mp.put(data_structs["Código subsector económico"], subsector, nuevo_subsector)
+        lt.addLast(nuevo_subsector["Regs"], reg)
     else:
-        entry = mp.get(data_structs["Código subsector económico"], anio)
+        entry = mp.get(data_structs["Código subsector económico"], subsector)
         subsector_existente = me.getValue(entry)
         lt.addLast(subsector_existente["Regs"], reg)
-
 
 
 # Funciones de consulta
@@ -213,6 +213,7 @@ def data_size(data_structs):
     """
     return lt.size(data_structs["Regs"])
 
+
 def getRegsByYears(data_structs, year):
     exists = mp.contains(data_structs["Año"], year)
     if exists:
@@ -220,12 +221,22 @@ def getRegsByYears(data_structs, year):
         return me.getValue(entry)
     return None
 
+
 def getRegsByEconomicSector(data_structs, sector_code):
     exists = mp.contains(data_structs["Código sector económico"], sector_code)
     if exists:
         entry = mp.get(data_structs["Código sector económico"], sector_code)
         return me.getValue(entry)
     return None
+
+
+def getRegsByEconomicSubsector(data_structs, subsector_code):
+    exists = mp.contains(data_structs["Código subsector económico"], subsector_code)
+    if exists:
+        entry = mp.get(data_structs["Código subsector económico"], subsector_code)
+        return me.getValue(entry)
+    return None
+
 
 def req_1(data_structs):
     """
@@ -235,7 +246,7 @@ def req_1(data_structs):
     pass
 
 
-def sort_crit_saldo_a_favor (dato1,dato2):
+def sort_crit_saldo_a_favor (dato1, dato2):
     """
     Ordena los datos de menor a mayor acorde a Total saldo a favor.   
     """
@@ -259,12 +270,37 @@ def max_saldo_a_favor(data_structs, anio, cod_sec_econ):
     return lt.lastElement(sorted_data)
 
 
-def req_3(data_structs):
+def min_total_retenciones(data_structs, anio):
     """
-    Función que soluciona el requerimiento 3
+    Función que soluciona el requerimiento 2
     """
-    # TODO: Realizar el requerimiento 3
-    pass
+    data_structs_3 = new_data_structs()
+    data_anio = getRegsByYears(data_structs, anio)
+    for reg in lt.iterator(data_anio["Regs"]):
+        addReg(data_structs_3, reg)
+    
+    subsectores = mp.keySet(data_structs_3["Código subsector económico"])
+
+    valor_min_total_retenciones = 100000000000000000000000000
+    total_de_retenciones = 0
+    
+    min_entry = mp.get(data_structs_3["Código subsector económico"], lt.firstElement(subsectores))
+    subsector_min = me.getValue(min_entry)
+    
+    for cod_subsector in lt.iterator(subsectores):
+        entry = mp.get(data_structs_3["Código subsector económico"], cod_subsector)
+        subsector = me.getValue(entry)
+
+        for reg_subsector in lt.iterator(subsector["Regs"]):
+            total_de_retenciones += int(reg_subsector["Total retenciones"])
+        
+        if total_de_retenciones < valor_min_total_retenciones:
+            subsector_min = subsector
+            valor_min_total_retenciones = total_de_retenciones
+        total_de_retenciones = 0
+
+    subsector_min = sa.sort(subsector_min["Regs"], compareTotalRetenciones)
+    return subsector_min
 
 
 def req_4(data_structs):
@@ -291,12 +327,39 @@ def req_6(data_structs):
     pass
 
 
-def req_7(data_structs):
+def sort_crit_total_costos_gastos(dato1, dato2):
+    """
+    Ordena los datos de menor a mayor acorde a total costos y gastos.   
+    """
+    if dato1["Total costos y gastos"] < dato2["Total costos y gastos"]:
+        return True
+    else:
+        return False
+
+
+def mins_costos_gastos(data_structs, num_act_econ, anio, cod_subsec_econ):
     """
     Función que soluciona el requerimiento 7
     """
-    # TODO: Realizar el requerimiento 7
-    pass
+    data_structs_4 = new_data_structs()
+    data_anio = getRegsByYears(data_structs, anio)
+    for reg in lt.iterator(data_anio["Regs"]):
+        addReg(data_structs_4, reg)
+
+    data_subsec = getRegsByEconomicSubsector(data_structs_4, cod_subsec_econ)
+    sorted_data = sa.sort(data_subsec["Regs"], sort_crit_total_costos_gastos)
+    top_n_data = lt.newList()
+
+    max_act = num_act_econ
+    if lt.size(sorted_data) < num_act_econ:
+        max_act = lt.size(sorted_data)
+
+    for reg in lt.iterator(sorted_data):
+        lt.addLast(top_n_data, reg)
+        if lt.size(top_n_data) >= max_act:
+            break
+
+    return top_n_data
 
 
 def req_8(data_structs):
@@ -322,14 +385,15 @@ def cmpRegsAnio(anio_1, me_anio_2):
     else:
         return -1
     
+
 def sort_by_actividad_economica(act_1, me_act_2):
     """
-    Compara los registros por año, ordenándolos de menor a mayor. 
+    Compara los registros por actividad económica, ordenándolos de menor a mayor. 
     """
-    anio_2 = me.getKey(me_act_2)
-    if (act_1 == anio_2):
+    act_2 = me.getKey(me_act_2)
+    if (act_1 == act_2):
         return 0
-    elif (act_1 > anio_2):
+    elif (act_1 > act_2):
         return 1
     else:
         return -1
@@ -345,6 +409,9 @@ def compareYearAndActivity(reg_1,reg_2):
         return reg_1["Código actividad económica"] < reg_2["Código actividad económica"]
     else:
         return False
+    
+def compareTotalRetenciones(reg_1,reg_2):
+    return reg_1["Total retenciones"] < reg_2["Total retenciones"]
 
 
 def sort_by_anio_act_eco(data_structs):
